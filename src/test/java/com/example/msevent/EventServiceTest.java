@@ -1,6 +1,8 @@
 package com.example.msevent;
 
+import com.example.msevent.client.UserClient;
 import com.example.msevent.dto.request.EventRequest;
+import com.example.msevent.dto.request.UserDto;
 import com.example.msevent.dto.response.EventResponse;
 import com.example.msevent.mapper.EventMapper;
 import com.example.msevent.model.Category;
@@ -23,7 +25,10 @@ class EventServiceTest {
     private final EventRepository eventRepository = mock(EventRepository.class);
     private final SpeakerRepository speakerRepository = mock(SpeakerRepository.class);
     private final EventMapper mapper = mock(EventMapper.class);
-    private final EventService eventService = new EventService(eventRepository, speakerRepository, mapper);
+    private final UserClient userClient = mock(UserClient.class);
+    private final EventService eventService = new EventService(eventRepository, speakerRepository, mapper, userClient);
+
+    private final Long userId = 42L; // test üçün
 
     @Test
     void create_shouldReturnEventResponse() {
@@ -37,15 +42,21 @@ class EventServiceTest {
         event.setId(1L);
         event.setTitle("Test Event");
 
+        UserDto userDto = new UserDto();
+        userDto.setUsername("testuser");
+        userDto.setRole("ORGANIZER");
+
         when(mapper.toEntity(request)).thenReturn(event);
         when(eventRepository.save(event)).thenReturn(event);
         when(mapper.toDto(event)).thenReturn(new EventResponse());
+        when(userClient.getUserById(userId)).thenReturn(userDto);
 
-        EventResponse response = eventService.create(request);
+        EventResponse response = eventService.create(request, userId);
 
         assertNotNull(response);
         verify(eventRepository, times(1)).save(event);
         verify(mapper, times(1)).toDto(event);
+        verify(userClient, times(1)).getUserById(userId);
     }
 
     @Test
@@ -53,12 +64,13 @@ class EventServiceTest {
         EventRequest request = new EventRequest();
         Event event = new Event();
         event.setId(1L);
+        event.setCreatedByUserId(userId);
 
         when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
         when(mapper.toDto(event)).thenReturn(new EventResponse());
         when(eventRepository.save(event)).thenReturn(event);
 
-        EventResponse response = eventService.update(1L, request);
+        EventResponse response = eventService.update(1L, request, userId);
 
         assertNotNull(response);
         verify(eventRepository, times(1)).save(event);
@@ -72,28 +84,61 @@ class EventServiceTest {
         when(eventRepository.findById(1L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
-                () -> eventService.update(1L, request));
+                () -> eventService.update(1L, request, userId));
 
         assertEquals("Event not found with id: 1", ex.getMessage());
+    }
+
+    @Test
+    void update_eventNotOwnedByUser_shouldThrowSecurityException() {
+        EventRequest request = new EventRequest();
+        Event event = new Event();
+        event.setId(1L);
+        event.setCreatedByUserId(999L); // fərqli user
+
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+
+        SecurityException ex = assertThrows(SecurityException.class,
+                () -> eventService.update(1L, request, userId));
+
+        assertEquals("You are not allowed to update this event!", ex.getMessage());
     }
 
     @Test
     void delete_existingEvent_shouldCallRepository() {
-        when(eventRepository.existsById(1L)).thenReturn(true);
+        Event event = new Event();
+        event.setId(1L);
+        event.setCreatedByUserId(userId);
 
-        eventService.delete(1L);
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
 
-        verify(eventRepository, times(1)).deleteById(1L);
+        eventService.delete(1L, userId);
+
+        verify(eventRepository, times(1)).delete(event);
     }
 
     @Test
     void delete_nonExistingEvent_shouldThrowException() {
-        when(eventRepository.existsById(1L)).thenReturn(false);
+        when(eventRepository.findById(1L)).thenReturn(Optional.empty());
 
         ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
-                () -> eventService.delete(1L));
+                () -> eventService.delete(1L, userId));
 
         assertEquals("Event not found with id: 1", ex.getMessage());
+    }
+
+    @Test
+    void delete_eventNotOwnedByUser_shouldThrowSecurityException() {
+        Event event = new Event();
+        event.setId(1L);
+        event.setCreatedByUserId(999L);
+
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+
+        SecurityException ex = assertThrows(SecurityException.class,
+                () -> eventService.delete(1L, userId));
+
+        assertEquals("You are not allowed to delete this event!", ex.getMessage());
     }
 
     @Test

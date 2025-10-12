@@ -1,5 +1,6 @@
 package com.example.msevent.dto.response;
 
+import com.example.msevent.dto.request.UserDto;
 import com.example.msevent.model.Category;
 import lombok.Data;
 
@@ -20,4 +21,5 @@ public class EventResponse {
 
     private List<SessionResponse> sessions;
     private Long totalParticipants;
+    private UserDto createdBy;
 }

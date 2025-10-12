@@ -6,10 +6,9 @@ import com.example.msevent.service.EventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -21,42 +20,45 @@ public class EventController {
     private final EventService eventService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ORGANIZER')")
-    public ResponseEntity<EventResponse> create(@Validated @RequestBody EventRequest request) {
-        log.info("API Call: Create Event");
-        return ResponseEntity.ok(eventService.create(request));
+    public ResponseEntity<EventResponse> createEvent(
+            @Valid @RequestBody EventRequest request,
+            @RequestHeader("X-User-Id") Long userId) {
+
+        log.info("Creating event by userId={}", userId);
+        return ResponseEntity.ok(eventService.create(request, userId));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ORGANIZER')")
-    public ResponseEntity<EventResponse> update(@PathVariable Long id,
-                                                @Validated @RequestBody EventRequest request) {
-        log.info("API Call: Update Event with id {}", id);
-        return ResponseEntity.ok(eventService.update(id, request));
+    public ResponseEntity<EventResponse> updateEvent(
+            @PathVariable Long id,
+            @Valid @RequestBody EventRequest request,
+            @RequestHeader("X-User-Id") Long userId) {
+
+        log.info("Updating event id={} by userId={}", id, userId);
+        return ResponseEntity.ok(eventService.update(id, request, userId));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ORGANIZER')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        log.info("API Call: Delete Event with id {}", id);
-        eventService.delete(id);
+    public ResponseEntity<Void> deleteEvent(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+
+        eventService.delete(id, userId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'USER')")
-    public ResponseEntity<EventResponse> getById(@PathVariable Long id) {
-        log.info("API Call: Get Event by id {}", id);
+    public ResponseEntity<EventResponse> getEventById(@PathVariable Long id) {
         return ResponseEntity.ok(eventService.getById(id));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'USER')")
-    public ResponseEntity<List<EventResponse>> listAll(@RequestParam(required = false) String category) {
-        log.info("API Call: List Events");
-        if (category != null) {
-            return ResponseEntity.ok(eventService.listByCategory(category));
-        }
+    public ResponseEntity<List<EventResponse>> getAllEvents() {
         return ResponseEntity.ok(eventService.listAll());
+    }
+
+    @GetMapping("/category/{category}")
+    public ResponseEntity<List<EventResponse>> getEventsByCategory(@PathVariable String category) {
+        return ResponseEntity.ok(eventService.listByCategory(category));
     }
 }

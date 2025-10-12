@@ -1,6 +1,8 @@
 package com.example.msevent.service;
 
+import com.example.msevent.client.UserClient;
 import com.example.msevent.dto.request.EventRequest;
+import com.example.msevent.dto.request.UserDto;
 import com.example.msevent.dto.response.EventResponse;
 import com.example.msevent.mapper.EventMapper;
 import com.example.msevent.model.Category;
@@ -26,11 +28,17 @@ public class EventService {
     private final EventRepository eventRepository;
     private final SpeakerRepository speakerRepository;
     private final EventMapper mapper;
+    private final UserClient userClient; // Feign Client ilə user məlumatı üçün (optional)
 
     @Transactional
-    public EventResponse create(EventRequest request) {
-        log.info("Creating new event: {}", request.getTitle());
+    public EventResponse create(EventRequest request, Long userId) {
+        log.info("Creating new event by userId={}", userId);
+
+        UserDto user = userClient.getUserById(userId);
+        log.debug("User fetched from ms-auth: {} ({})", user.getUsername(), user.getRole());
+
         Event event = mapper.toEntity(request);
+        event.setCreatedByUserId(userId);
 
         if (request.getSessions() != null) {
             List<Session> sessions = request.getSessions().stream().map(sessionReq -> {
@@ -49,15 +57,20 @@ public class EventService {
         }
 
         Event saved = eventRepository.save(event);
-        log.info("Event created with id: {}", saved.getId());
+        log.info("Event created with id={} by userId={}", saved.getId(), userId);
         return mapper.toDto(saved);
     }
 
     @Transactional
-    public EventResponse update(Long id, EventRequest request) {
-        log.info("Updating event with id: {}", id);
+    public EventResponse update(Long id, EventRequest request, Long userId) {
+        log.info("Updating event id={} by userId={}", id, userId);
+
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + id));
+
+        if (!event.getCreatedByUserId().equals(userId)) {
+            throw new SecurityException("You are not allowed to update this event!");
+        }
 
         mapper.updateFromDto(request, event);
 
@@ -80,21 +93,26 @@ public class EventService {
         }
 
         Event saved = eventRepository.save(event);
-        log.info("Event updated successfully: {}", saved.getId());
+        log.info("Event updated successfully id={} by userId={}", saved.getId(), userId);
         return mapper.toDto(saved);
     }
 
-    public void delete(Long id) {
-        log.info("Deleting event with id: {}", id);
-        if (!eventRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Event not found with id: " + id);
+    public void delete(Long id, Long userId) {
+        log.info("Deleting event id={} by userId={}", id, userId);
+
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + id));
+
+        if (!event.getCreatedByUserId().equals(userId)) {
+            throw new SecurityException("You are not allowed to delete this event!");
         }
-        eventRepository.deleteById(id);
-        log.info("Event deleted successfully: {}", id);
+
+        eventRepository.delete(event);
+        log.info("Event deleted successfully by userId={}", userId);
     }
 
     public EventResponse getById(Long id) {
-        log.info("Fetching event by id: {}", id);
+        log.info("Fetching event by id={}", id);
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + id));
         return mapper.toDto(event);
@@ -108,8 +126,10 @@ public class EventService {
     }
 
     public List<EventResponse> listByCategory(String category) {
-        log.info("Fetching events by category: {}", category);
+        log.info("Fetching events by category={}", category);
         return eventRepository.findByCategory(Category.valueOf(category.toUpperCase()))
-                .stream().map(mapper::toDto).collect(Collectors.toList());
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
     }
 }

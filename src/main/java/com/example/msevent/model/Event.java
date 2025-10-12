@@ -19,6 +19,9 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "created_by_user_id", nullable = false)
+    private Long createdByUserId;
+
     private String title;
 
     @Column(length = 2000)
