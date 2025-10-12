@@ -1,19 +1,28 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.0'
-    id 'io.spring.dependency-management' version '1.1.0'
+    id 'org.springframework.boot' version '3.5.0'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id "com.diffplug.spotless" version "6.23.0"
 }
 
-group = 'com.smartevent'
+group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 
 java {
     sourceCompatibility = '17'
 }
 
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
 repositories {
     mavenCentral()
 }
+
+
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -29,8 +38,6 @@ dependencies {
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:0.11.5"
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -38,6 +45,14 @@ dependencies {
     testImplementation 'org.mockito:mockito-junit-jupiter:5.3.1'
 }
 
-test {
+tasks.named('test') {
     useJUnitPlatform()
+}
+
+
+spotless {
+    java {
+        removeUnusedImports()
+        target 'src/**/*.java'
+    }
 }
