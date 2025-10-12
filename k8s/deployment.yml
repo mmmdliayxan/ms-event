@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-event-deployment
+  labels:
+    app: ms-event
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-event
+  template:
+    metadata:
+      labels:
+        app: ms-event
+    spec:
+      containers:
+        - name: ms-event
+          image: docker.io/mmmdliayxan321/ms-event:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://shared-postgres:5432/eventdb"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "postgres"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "password"
