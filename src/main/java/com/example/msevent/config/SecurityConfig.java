@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.disable())
                 .addFilterBefore(roleHeaderAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/event/**").permitAll()
                         .anyRequest().authenticated())
                 .build();
     }
