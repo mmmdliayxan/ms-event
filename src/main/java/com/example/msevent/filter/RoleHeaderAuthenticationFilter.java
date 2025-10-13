@@ -32,6 +32,10 @@ public class RoleHeaderAuthenticationFilter extends OncePerRequestFilter {
 
         String userId = request.getHeader("X-User-Id");
         String role = request.getHeader("X-User-Role");
+        if (role == null || role.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
 
         if (userId != null && role != null) {
             GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
