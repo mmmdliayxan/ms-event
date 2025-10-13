@@ -60,7 +60,7 @@ public class SecurityConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("MS Gateway API")
+                        .title("MS Event API")
                         .version("1.0")
                         .description("Swagger UI with JWT token for MS Auth and MS Event"))
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
