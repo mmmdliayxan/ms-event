@@ -132,4 +132,12 @@ public class EventService {
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
     }
+
+    public List<EventResponse> getByOrganizer(Long userId) {
+        List<Event> events = eventRepository.findByCreatedByUserId(userId);
+        return events.stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+    }
+
 }

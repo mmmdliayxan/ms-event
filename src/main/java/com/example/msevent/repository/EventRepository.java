@@ -11,4 +11,6 @@ import java.util.List;
 public interface EventRepository extends JpaRepository<Event, Long> {
     List<Event> findByCategory(Category category);
     List<Event> findByTitle(String title);
+    List<Event> findByCreatedByUserId(Long createdByUserId);
+
 }
