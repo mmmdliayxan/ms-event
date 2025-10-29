@@ -2,7 +2,7 @@ package com.example.msevent.service;
 
 import com.example.msevent.client.UserClient;
 import com.example.msevent.dto.request.EventRequest;
-import com.example.msevent.dto.request.UserDto;
+import com.example.msevent.dto.request.UserResponse;
 import com.example.msevent.dto.response.EventResponse;
 import com.example.msevent.mapper.EventMapper;
 import com.example.msevent.model.Category;
@@ -14,6 +14,7 @@ import com.example.msevent.repository.EventRepository;
 import com.example.msevent.repository.SpeakerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,8 +35,8 @@ public class EventService {
     public EventResponse create(EventRequest request, Long userId) {
         log.info("Creating new event by userId={}", userId);
 
-        UserDto user = userClient.getUserById(userId);
-        log.debug("User fetched from ms-auth: {} ({})", user.getUsername(), user.getRole());
+        ResponseEntity<UserResponse> user = userClient.getUserById(userId);
+        log.debug("User fetched from ms-auth: {} ({})", user.getBody().getUsername(), user.getBody().getRole());
 
         Event event = mapper.toEntity(request);
         event.setCreatedByUserId(userId);

@@ -2,11 +2,12 @@ package com.example.msevent;
 
 import com.example.msevent.client.UserClient;
 import com.example.msevent.dto.request.EventRequest;
-import com.example.msevent.dto.request.UserDto;
+import com.example.msevent.dto.request.UserResponse;
 import com.example.msevent.dto.response.EventResponse;
 import com.example.msevent.mapper.EventMapper;
 import com.example.msevent.model.Category;
 import com.example.msevent.model.Event;
+import com.example.msevent.model.Role;
 import com.example.msevent.model.exception.ResourceNotFoundException;
 import com.example.msevent.repository.EventRepository;
 import com.example.msevent.repository.SpeakerRepository;
@@ -42,9 +43,9 @@ class EventServiceTest {
         event.setId(1L);
         event.setTitle("Test Event");
 
-        UserDto userDto = new UserDto();
+        UserResponse userDto = new UserResponse();
         userDto.setUsername("testuser");
-        userDto.setRole("ORGANIZER");
+        userDto.setRole(Role.ORGANIZER);
 
         when(mapper.toEntity(request)).thenReturn(event);
         when(eventRepository.save(event)).thenReturn(event);
