@@ -13,6 +13,7 @@ import com.example.msevent.repository.EventRepository;
 import com.example.msevent.repository.SpeakerRepository;
 import com.example.msevent.service.EventService;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.ResponseEntity;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -33,6 +34,8 @@ class EventServiceTest {
 
     @Test
     void create_shouldReturnEventResponse() {
+        Long userId = 5L; // əgər yuxarıda yoxdur, əlavə et
+
         EventRequest request = new EventRequest();
         request.setTitle("Test Event");
         request.setCategory(Category.CONFERENCE);
@@ -47,10 +50,16 @@ class EventServiceTest {
         userDto.setUsername("testuser");
         userDto.setRole(Role.ORGANIZER);
 
+        EventResponse eventResponse = new EventResponse();
+        eventResponse.setId(1L);
+        eventResponse.setTitle("Test Event");
+
         when(mapper.toEntity(request)).thenReturn(event);
         when(eventRepository.save(event)).thenReturn(event);
-        when(mapper.toDto(event)).thenReturn(new EventResponse());
-        when(userClient.getUserById(userId)).thenReturn(userDto);
+        when(mapper.toDto(event)).thenReturn(eventResponse);
+
+        // ✅ Feign Client ResponseEntity mock
+        when(userClient.getUserById(userId)).thenReturn(ResponseEntity.ok(userDto));
 
         EventResponse response = eventService.create(request, userId);
 
