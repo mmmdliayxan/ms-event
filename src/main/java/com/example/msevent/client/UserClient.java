@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(name = "authClient", url = "http://ms-auth:8081/api/users", configuration = FeignAuthInterceptor.class)
 public interface UserClient {
-    @GetMapping("/{id}")
+    @GetMapping("/byId/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     ResponseEntity<UserResponse> getUserById(@PathVariable("id") Long id);
 }
