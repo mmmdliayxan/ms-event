@@ -2,20 +2,26 @@ package com.example.msevent.config;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Configuration
-public class FeignAuthInterceptor implements RequestInterceptor {
+public class FeignAuthInterceptor  {
 
-    @Override
-    public void apply(RequestTemplate template) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getCredentials() != null) {
-            String token = authentication.getCredentials().toString();
-            template.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        }
+    @Bean
+    public RequestInterceptor requestInterceptor() {
+        return (RequestTemplate template) -> {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest request = attrs.getRequest();
+                String authHeader = request.getHeader("Authorization");
+                if (authHeader != null) {
+                    template.header("Authorization", authHeader);
+                }
+            }
+        };
     }
 }
